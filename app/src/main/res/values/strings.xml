@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">BLE Advertiser Scanner</string>
+    <string name="ble_service_uuid_base">0000%1$s-0000-1000-8000-00805F9B34FB</string>
+
+    <string name="device_name_text">My device name: \"%1$s\"</string>
+    <string name="service_data_label">Data</string>
+    <string name="service_data_hint_text">Service Data</string>
+    <string name="include_switch_label">Include</string>
+
+    <string name="start_advertise_button_text">Start Advertising</string>
+    <string name="stop_advertise_button_text">Stop Advertising</string>
+    <string name="start_scan_button_text">Start Scanning</string>
+    <string name="stop_scan_button_text">Stop Scanning</string>
+
+    <string name="advertise_status_advertising">Status: Advertising</string>
+    <string name="advertise_status_not_advertising">Status: Not Advertising</string>
+    <string name="scan_status_scanning">Status: Scanning</string>
+    <string name="scan_status_not_scanning">Status: Not Scanning</string>
+
+    <string name="scan_result_none">Scan result:\nNot scanned</string>
+    <string name="scan_result">Scan result:\nDevice name: \"%1$s\"\nService data: \"%2$s\"</string>
+</resources>
