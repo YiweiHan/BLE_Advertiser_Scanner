@@ -31,11 +31,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class MainActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity {
 
     private static final String TAG = "BLEP";
     private static final int REQUEST_ENABLE_BT = 1;
-    private static final String ADVERTISE_UUID_16 = "A490"; // random 16 bit UUID to emulate BLE standard
+    // random 16 bit UUID to emulate BLE standard
+    private static final String ADVERTISE_UUID_16 = "A490";
 
     private ParcelUuid mServiceUuid;
 
@@ -43,14 +44,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView mScanStatus;
     private TextView mScanResult;
 
-    private Button mStartAdvertiseButton;
-    private Button mStopAdvertiseButton;
-    private Button mStartScanButton;
-    private Button mStopScanButton;
+    private Button mAdvertiseButton;
+    private Button mScanButton;
+
+    private boolean isScanning;
+    private boolean isAdvertising;
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeAdvertiser mAdvertiser;
     private BluetoothLeScanner mScanner;
+
+    List<ScanFilter> mSFilters;
+    ScanSettings mSSettings;
 
     private Context mContext = this;
 
@@ -59,19 +64,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mAdvertiseStatus = findViewById(R.id.advertise_status_textview);
-        mScanStatus = findViewById(R.id.scan_status_textview);
-        mScanResult = findViewById(R.id.scan_result_textview);
+        isScanning = false;
+        isAdvertising = false;
 
-        mStartAdvertiseButton = findViewById(R.id.start_advertise_button);
-        mStopAdvertiseButton = findViewById(R.id.stop_advertise_button);
-        mStartScanButton = findViewById(R.id.start_scan_button);
-        mStopScanButton = findViewById(R.id.stop_scan_button);
+        initViews();
+        initButtons();
 
-        mStartAdvertiseButton.setOnClickListener(this);
-        mStopAdvertiseButton.setOnClickListener(this);
-        mStartScanButton.setOnClickListener(this);
-        mStopScanButton.setOnClickListener(this);
+        mSFilters = new ArrayList<>();
+        ScanFilter filter = new ScanFilter.Builder()
+                .setServiceUuid(mServiceUuid)
+                .build();
+        mSFilters.add(filter);
+        mSSettings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .build();
 
         mServiceUuid = new ParcelUuid(UUID.fromString(getString(R.string.ble_service_uuid_base, ADVERTISE_UUID_16)));
 
@@ -83,6 +89,52 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     }
 
+    private void initViews() {
+        mAdvertiseStatus = findViewById(R.id.advertise_status_textview);
+        mScanStatus = findViewById(R.id.scan_status_textview);
+        mScanResult = findViewById(R.id.scan_result_textview);
+        mAdvertiseButton = findViewById(R.id.advertise_button);
+        mScanButton = findViewById(R.id.scan_button);
+    }
+
+    private void initButtons() {
+        View.OnClickListener clickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int id = view.getId();
+                if (
+                        ((id == R.id.advertise_button && !isAdvertising) || (id == R.id.scan_button && !isScanning))
+                        && !mBluetoothAdapter.isEnabled()) {
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                    return;
+                }
+
+                switch (id) {
+                    case R.id.advertise_button:
+                        if (isAdvertising) {
+                            stopAdvertise();
+                        } else {
+                            startAdvertise();
+                        }
+                        break;
+                    case R.id.scan_button:
+                        if (isScanning) {
+                            stopScan();
+                        } else {
+                            startScan();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+
+        mAdvertiseButton.setOnClickListener(clickListener);
+        mScanButton.setOnClickListener(clickListener);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -91,71 +143,39 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Returning from a request for bluetooth to be enabled on the device
         if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             Toast.makeText(this, "Bluetooth must be enabled to continue", Toast.LENGTH_LONG).show();
             Log.d(TAG, "user refused to enable bluetooth");
             return;
         }
-
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-        if ((id == R.id.start_advertise_button || id == R.id.start_scan_button) && !mBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            return;
-        }
-
-        switch (id) {
-            case R.id.start_advertise_button:
-                startAdvertise();
-                break;
-            case R.id.stop_advertise_button:
-                stopAdvertise();
-                break;
-            case R.id.start_scan_button:
-                startScan();
-                break;
-            case R.id.stop_scan_button:
-                stopScan();
-                break;
-            default:
-                break;
-        }
-    }
-
     private void startScan() {
+        Log.d(TAG, "starting scan...");
+
+        isScanning = true;
+
         mScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
-        List<ScanFilter> filters = new ArrayList<>();
-
-        ScanFilter filter = new ScanFilter.Builder()
-                .setServiceUuid(mServiceUuid)
-                .build();
-        filters.add(filter);
-
-        ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .build();
+        // TODO: may cause UI lag here
+        mScanner.startScan(mSFilters, mSSettings, mScanCallback);
 
         mScanStatus.setText(R.string.scan_status_scanning);
-        mStartScanButton.setVisibility(View.GONE);
-        mStopScanButton.setVisibility(View.VISIBLE);
-        mScanner.startScan(filters, settings, mScanCallback);
+        mScanButton.setText(R.string.stop_scan_button_text);
     }
 
     private void stopScan() {
+        Log.d(TAG, "stopping scan...");
+        isScanning = false;
         if (mScanner != null) {
             mScanner.stopScan(mScanCallback);
-            Log.d(TAG, "scanning stopped");
+            Log.d(TAG, "scanning was stopped");
         }
         mScanner = null;
         mScanStatus.setText(R.string.scan_status_not_scanning);
-        mStartScanButton.setVisibility(View.VISIBLE);
-        mStopScanButton.setVisibility(View.GONE);
+        mScanButton.setText(R.string.start_scan_button_text);
     }
 
     private ScanCallback mScanCallback = new ScanCallback() {
@@ -203,14 +223,15 @@ public class MainActivity extends Activity implements View.OnClickListener {
     };
 
     private void enableAdvertiseConfigs(boolean enable) {
-        mStartAdvertiseButton.setEnabled(enable);
-        mStopAdvertiseButton.setEnabled(enable);
         findViewById(R.id.include_name_switch).setEnabled(enable);
         findViewById(R.id.service_data_input).setEnabled(enable);
         findViewById(R.id.include_service_switch).setEnabled(enable);
     }
 
     private void startAdvertise() {
+        Log.d(TAG, "starting advertise...");
+        isAdvertising = true;
+
         // disable advertising UI interaction while changing advertisement state
         enableAdvertiseConfigs(false);
 
@@ -241,17 +262,23 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         Log.d(TAG, "advertising: " + data.toString());
         mAdvertiser.startAdvertising(settings, data, mAdvertiseCallback);
+
+        // update ui to show advertising status
+        mAdvertiseStatus.setText(R.string.advertise_status_advertising);
+        mAdvertiseButton.setText(R.string.stop_advertise_button_text);
     }
 
     private void stopAdvertise() {
+        Log.d(TAG, "stopping advertise...");
+        isAdvertising = false;
+
         if (mAdvertiser != null) {
             mAdvertiser.stopAdvertising(mAdvertiseCallback);
             Log.d(TAG, "advertising stopped");
         }
         mAdvertiser = null;
         mAdvertiseStatus.setText(R.string.advertise_status_not_advertising);
-        mStopAdvertiseButton.setVisibility(View.GONE);
-        mStartAdvertiseButton.setVisibility(View.VISIBLE);
+        mAdvertiseButton.setText(R.string.start_advertise_button_text);
         enableAdvertiseConfigs(true);
     }
 
@@ -260,13 +287,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         public void onStartSuccess(AdvertiseSettings settingsInEffect) {
             super.onStartSuccess(settingsInEffect);
             Log.d(TAG, "advertising onStartSuccess");
-
-            // update ui to show advertising status
-            mAdvertiseStatus.setText(R.string.advertise_status_advertising);
-            mStartAdvertiseButton.setVisibility(View.GONE);
-            mStopAdvertiseButton.setVisibility(View.VISIBLE);
-            mStartAdvertiseButton.setEnabled(true);
-            mStopAdvertiseButton.setEnabled(true);
         }
 
         @Override

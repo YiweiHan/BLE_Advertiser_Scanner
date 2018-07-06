@@ -124,28 +124,16 @@
         app:layout_constraintTop_toBottomOf="@+id/advertise_status_textview">
 
         <Button
-            android:id="@+id/start_advertise_button"
+            android:id="@+id/advertise_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:text="@string/start_advertise_button_text"
             android:visibility="visible"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <Button
-            android:id="@+id/stop_advertise_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:text="@string/stop_advertise_button_text"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/start_advertise_button"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            tools:layout_editor_absoluteY="48dp" />
     </android.support.constraint.ConstraintLayout>
 
     <TextView
@@ -183,25 +171,13 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <Button
-            android:id="@+id/start_scan_button"
+            android:id="@+id/scan_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:text="@string/start_scan_button_text"
             android:visibility="visible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <Button
-            android:id="@+id/stop_scan_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:text="@string/stop_scan_button_text"
-            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
