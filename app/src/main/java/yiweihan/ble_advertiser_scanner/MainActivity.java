@@ -102,8 +102,8 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 int id = view.getId();
-                if ((
-                        (id == R.id.advertise_button && !isAdvertising) || (id == R.id.scan_button && !isScanning))
+                if (
+                        ((id == R.id.advertise_button && !isAdvertising) || (id == R.id.scan_button && !isScanning))
                         && !mBluetoothAdapter.isEnabled()) {
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
@@ -159,9 +159,8 @@ public class MainActivity extends Activity {
 
         mScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
-        mScanButton.setEnabled(false);
+        // TODO: may cause UI lag here
         mScanner.startScan(mSFilters, mSSettings, mScanCallback);
-        mScanButton.setEnabled(true);
 
         mScanStatus.setText(R.string.scan_status_scanning);
         mScanButton.setText(R.string.stop_scan_button_text);
